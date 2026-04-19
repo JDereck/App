@@ -246,11 +246,82 @@
     }
     .btn-filtro:hover  { border-color: #a0aec0; color: var(--texto); }
     .btn-filtro.ativo  { background: var(--texto); color: #fff; border-color: var(--texto); }
+    .btn-filtro.membro.ativo { background: #6b46c1; border-color: #6b46c1; }
+
+    /* ── Gerenciador de membros ── */
+    #card-membros {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      max-width: 640px;
+      margin: 0 auto 1.5rem;
+    }
+    #cabecalho-membros {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+    #cabecalho-membros h2 { font-size: 1rem; margin: 0; color: var(--mudo); font-weight: 600; }
+    #seta-membros { font-size: .85rem; color: var(--mudo); transition: transform .2s; }
+    #seta-membros.recolhido { transform: rotate(-90deg); }
+    #corpo-membros { margin-top: 1rem; }
+    #corpo-membros.oculto { display: none; }
+
+    .linha-membro {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .4rem 0;
+      border-bottom: 1px solid var(--borda);
+      font-size: .95rem;
+    }
+    .linha-membro:last-child { border-bottom: none; }
+
+    .linha-adicionar-membro { display: flex; gap: .5rem; margin-top: .75rem; }
+    .linha-adicionar-membro input { flex: 1; }
+
+    .btn-remover-membro {
+      background: none;
+      border: none;
+      color: var(--mudo);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: .1rem .3rem;
+      border-radius: 4px;
+    }
+    .btn-remover-membro:hover { color: var(--alta); }
+
+    #lista-membros-gerenciar { margin-bottom: .25rem; }
+
+    .separador-filtros {
+      width: 1px;
+      background: var(--borda);
+      align-self: stretch;
+      margin: .1rem 0;
+    }
   </style>
 </head>
 <body>
 
 <h1>Gerenciador de Tarefas</h1>
+
+<!-- ── Gerenciador de Membros ── -->
+<div id="card-membros">
+  <div id="cabecalho-membros" onclick="alternarMembros()">
+    <h2>Membros da Casa</h2>
+    <span id="seta-membros">▼</span>
+  </div>
+  <div id="corpo-membros" class="oculto">
+    <div id="lista-membros-gerenciar"></div>
+    <div class="linha-adicionar-membro">
+      <input type="text" id="inp-novo-membro" placeholder="Nome do membro" />
+      <button class="btn btn-secundario" onclick="adicionarMembro()">Adicionar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Formulário de criação ── -->
 <div id="card-formulario">
@@ -274,7 +345,9 @@
   </select>
 
   <label for="inp-responsavel">Responsável</label>
-  <input type="text" id="inp-responsavel" placeholder="Nome de quem vai fazer" />
+  <select id="inp-responsavel">
+    <option value="">— Ninguém definido —</option>
+  </select>
 
   <label for="inp-vencimento">Data de vencimento</label>
   <input type="date" id="inp-vencimento" />
@@ -292,12 +365,15 @@
 
 <!-- ── Filtros ── -->
 <div id="barra-filtros">
-  <button class="btn-filtro ativo" data-filtro="todos"    onclick="aplicarFiltro(this)">Todas</button>
-  <button class="btn-filtro"       data-filtro="pendente" onclick="aplicarFiltro(this)">Pendentes</button>
+  <button class="btn-filtro ativo" data-filtro="todos"     onclick="aplicarFiltro(this)">Todas</button>
+  <button class="btn-filtro"       data-filtro="pendente"  onclick="aplicarFiltro(this)">Pendentes</button>
   <button class="btn-filtro"       data-filtro="concluida" onclick="aplicarFiltro(this)">Concluídas</button>
-  <button class="btn-filtro"       data-filtro="Alta"     onclick="aplicarFiltro(this)">Alta</button>
-  <button class="btn-filtro"       data-filtro="Média"    onclick="aplicarFiltro(this)">Média</button>
-  <button class="btn-filtro"       data-filtro="Baixa"    onclick="aplicarFiltro(this)">Baixa</button>
+  <div class="separador-filtros"></div>
+  <button class="btn-filtro"       data-filtro="Alta"      onclick="aplicarFiltro(this)">Alta</button>
+  <button class="btn-filtro"       data-filtro="Média"     onclick="aplicarFiltro(this)">Média</button>
+  <button class="btn-filtro"       data-filtro="Baixa"     onclick="aplicarFiltro(this)">Baixa</button>
+  <div class="separador-filtros" id="sep-membros" style="display:none"></div>
+  <span id="filtros-membros"></span>
 </div>
 
 <!-- ── Lista de tarefas existentes ── -->
@@ -317,6 +393,9 @@
   // Filtro ativo
   var filtroAtivo = 'todos';
 
+  // Lista de membros carregada do servidor
+  var membrosCache = [];
+
   // ── Formulário recolhível ────────────────────────────────────
   function alternarFormulario() {
     var corpo = document.getElementById('corpo-formulario');
@@ -325,15 +404,139 @@
     seta.classList.toggle('recolhido', oculto);
   }
 
+  function alternarMembros() {
+    var corpo = document.getElementById('corpo-membros');
+    var seta  = document.getElementById('seta-membros');
+    var oculto = corpo.classList.toggle('oculto');
+    seta.classList.toggle('recolhido', oculto);
+  }
+
   // ── Carregamento inicial + atualização automática ─────────────
   window.addEventListener('DOMContentLoaded', function() {
-    buscarTarefas();
-    setInterval(buscarTarefas, 30000); // atualiza a cada 30 segundos
+    buscarMembros().then(buscarTarefas);
+    setInterval(buscarTarefas, 30000);
   });
 
-  // Permite adicionar subtarefa pressionando Enter
+  // ── Buscar membros da casa ────────────────────────────────────
+  async function buscarMembros() {
+    try {
+      var resposta = await fetch(SCRIPT_URL + '?acao=membros');
+      if (!resposta.ok) return;
+      membrosCache = await resposta.json();
+      renderizarMembros();
+    } catch (erro) {
+      console.error('Erro ao carregar membros:', erro);
+    }
+  }
+
+  function renderizarMembros() {
+    // Atualiza lista no gerenciador
+    var lista = document.getElementById('lista-membros-gerenciar');
+    lista.innerHTML = '';
+    membrosCache.forEach(function(m) {
+      var linha = document.createElement('div');
+      linha.className = 'linha-membro';
+
+      var nome = document.createElement('span');
+      nome.textContent = m.nome;
+
+      var btn = document.createElement('button');
+      btn.className   = 'btn-remover-membro';
+      btn.title       = 'Remover ' + m.nome;
+      btn.textContent = '✕';
+      btn.addEventListener('click', function() {
+        if (confirm('Remover ' + m.nome + ' da lista?')) removerMembro(m.id, linha);
+      });
+
+      linha.appendChild(nome);
+      linha.appendChild(btn);
+      lista.appendChild(linha);
+    });
+
+    if (membrosCache.length === 0) {
+      lista.innerHTML = '<p style="color:var(--mudo);font-size:.875rem;margin-bottom:.5rem">Nenhum membro ainda.</p>';
+    }
+
+    // Atualiza select do formulário
+    var sel = document.getElementById('inp-responsavel');
+    var valorAtual = sel.value;
+    sel.innerHTML = '<option value="">— Ninguém definido —</option>';
+    membrosCache.forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value       = m.nome;
+      opt.textContent = m.nome;
+      if (m.nome === valorAtual) opt.selected = true;
+      sel.appendChild(opt);
+    });
+
+    // Atualiza filtros de membros
+    var zona = document.getElementById('filtros-membros');
+    var sep  = document.getElementById('sep-membros');
+    zona.innerHTML = '';
+    if (membrosCache.length > 0) {
+      sep.style.display = '';
+      membrosCache.forEach(function(m) {
+        var btn = document.createElement('button');
+        btn.className        = 'btn-filtro membro';
+        btn.dataset.filtro   = 'membro:' + m.nome;
+        btn.textContent      = m.nome;
+        btn.addEventListener('click', function() { aplicarFiltro(btn); });
+        zona.appendChild(btn);
+      });
+    } else {
+      sep.style.display = 'none';
+    }
+  }
+
+  // ── Adicionar membro ──────────────────────────────────────────
+  async function adicionarMembro() {
+    var inp  = document.getElementById('inp-novo-membro');
+    var nome = inp.value.trim();
+    if (!nome) return;
+
+    try {
+      var resposta = await fetch(SCRIPT_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body:    JSON.stringify({ acao: 'adicionarMembro', nome: nome })
+      });
+      var resultado = await resposta.json();
+      if (resultado.erro) { alert(resultado.erro); return; }
+
+      inp.value = '';
+      membrosCache.push({ id: resultado.id, nome: resultado.nome });
+      renderizarMembros();
+    } catch (erro) {
+      alert('Erro ao adicionar membro.');
+      console.error(erro);
+    }
+  }
+
+  // ── Remover membro ────────────────────────────────────────────
+  async function removerMembro(id, linhaEl) {
+    try {
+      var resposta = await fetch(SCRIPT_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body:    JSON.stringify({ acao: 'excluirMembro', id: id })
+      });
+      var resultado = await resposta.json();
+      if (resultado.erro) { alert(resultado.erro); return; }
+
+      membrosCache = membrosCache.filter(function(m) { return m.id !== id; });
+      renderizarMembros();
+    } catch (erro) {
+      alert('Erro ao remover membro.');
+      console.error(erro);
+    }
+  }
+
+  // Permite adicionar subtarefa ou membro pressionando Enter
   document.getElementById('inp-subtarefa').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); adicionarSubtarefa(); }
+  });
+  document.getElementById('inp-novo-membro').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); adicionarMembro(); }
   });
 
   // ── Buscar tarefas do Google Sheets ──────────────────────────
@@ -386,6 +589,7 @@
       document.getElementById('inp-prioridade').value  = 'Média';
       document.getElementById('inp-responsavel').value = '';
       document.getElementById('inp-vencimento').value  = '';
+      document.getElementById('inp-responsavel').selectedIndex = 0;
       bufferSubtarefas = [];
       document.getElementById('lista-subtarefas-temp').innerHTML = '';
 
@@ -434,9 +638,10 @@
 
     // Aplica filtro
     var visiveis = tarefas.filter(function(t) {
-      if (filtroAtivo === 'todos')     return true;
-      if (filtroAtivo === 'pendente')  return !t.concluido;
-      if (filtroAtivo === 'concluida') return t.concluido;
+      if (filtroAtivo === 'todos')                    return true;
+      if (filtroAtivo === 'pendente')                 return !t.concluido;
+      if (filtroAtivo === 'concluida')                return t.concluido;
+      if (filtroAtivo.indexOf('membro:') === 0)       return t.responsavel === filtroAtivo.slice(7);
       return t.prioridade === filtroAtivo;
     });
 

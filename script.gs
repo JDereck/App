@@ -10,31 +10,48 @@
 //   5. Copie a URL gerada e cole no index.html
 // =====================================================================
 
-var NOME_ABA = 'Tarefas';
-var CABECALHOS = ['ID', 'Tarefa', 'Descrição', 'Prioridade', 'Subtarefas', 'Concluído', 'Vencimento', 'Responsável'];
+var NOME_ABA         = 'Tarefas';
+var NOME_ABA_MEMBROS = 'Membros';
+var CABECALHOS         = ['ID', 'Tarefa', 'Descrição', 'Prioridade', 'Subtarefas', 'Concluído', 'Vencimento', 'Responsável'];
+var CABECALHOS_MEMBROS = ['ID', 'Nome'];
 
-// Busca todas as tarefas e retorna como JSON (método GET)
+// Roteador GET: ?acao=membros → lista membros; padrão → lista tarefas
 function doGet(e) {
+  var acao = e && e.parameter && e.parameter.acao ? e.parameter.acao : 'tarefas';
+
+  if (acao === 'membros') return listarMembros();
+  return listarTarefas();
+}
+
+function listarTarefas() {
   var planilha = getAba();
-  var dados = planilha.getDataRange().getValues();
+  var dados    = planilha.getDataRange().getValues();
 
-  // Pula a linha de cabeçalho (índice 0)
-  var linhas = dados.slice(1);
-
-  var tarefas = linhas.map(function(linha) {
+  var tarefas = dados.slice(1).map(function(linha) {
     return {
-      id:         String(linha[0]),
-      tarefa:     linha[1],
-      descricao:  linha[2],
-      prioridade: linha[3],
-      subtarefas: parsearJSON(linha[4]),
-      concluido:  linha[5] === true || linha[5] === 'TRUE',
-      vencimento:   linha[6] ? String(linha[6]) : '',
-      responsavel:  linha[7] ? String(linha[7]) : ''
+      id:          String(linha[0]),
+      tarefa:      linha[1],
+      descricao:   linha[2],
+      prioridade:  linha[3],
+      subtarefas:  parsearJSON(linha[4]),
+      concluido:   linha[5] === true || linha[5] === 'TRUE',
+      vencimento:  linha[6] ? String(linha[6]) : '',
+      responsavel: linha[7] ? String(linha[7]) : ''
     };
   });
 
   return construirResposta(tarefas);
+}
+
+function listarMembros() {
+  var aba   = getAbaMembros();
+  var dados = aba.getDataRange().getValues();
+
+  var membros = dados.slice(1).map(function(linha) {
+    return { id: String(linha[0]), nome: linha[1] };
+  });
+
+  return construirResposta(membros);
 }
 
 // Roteador de ações POST
@@ -43,9 +60,11 @@ function doPost(e) {
     var corpo = JSON.parse(e.postData.contents);
     var acao  = corpo.acao || 'criar';
 
-    if (acao === 'criar')    return acaoCriar(corpo);
-    if (acao === 'concluir') return acaoConcluir(corpo);
-    if (acao === 'excluir')  return acaoExcluir(corpo);
+    if (acao === 'criar')          return acaoCriar(corpo);
+    if (acao === 'concluir')       return acaoConcluir(corpo);
+    if (acao === 'excluir')        return acaoExcluir(corpo);
+    if (acao === 'adicionarMembro') return acaoAdicionarMembro(corpo);
+    if (acao === 'excluirMembro')   return acaoExcluirMembro(corpo);
 
     return construirResposta({ erro: 'Ação desconhecida: ' + acao });
   } catch (erro) {
@@ -87,6 +106,55 @@ function acaoConcluir(corpo) {
   }
 
   return construirResposta({ erro: 'Tarefa não encontrada: ' + id });
+}
+
+// Adiciona um membro da família
+function acaoAdicionarMembro(corpo) {
+  var nome = (corpo.nome || '').trim();
+  if (!nome) return construirResposta({ erro: 'Nome obrigatório' });
+
+  var aba   = getAbaMembros();
+  var dados = aba.getDataRange().getValues();
+
+  // Impede nome duplicado (case-insensitive)
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][1]).toLowerCase() === nome.toLowerCase()) {
+      return construirResposta({ erro: 'Membro já existe' });
+    }
+  }
+
+  var id = String(Date.now());
+  aba.appendRow([id, nome]);
+  return construirResposta({ sucesso: true, id: id, nome: nome });
+}
+
+// Remove um membro pelo ID
+function acaoExcluirMembro(corpo) {
+  var id    = String(corpo.id);
+  var aba   = getAbaMembros();
+  var dados = aba.getDataRange().getValues();
+
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][0]) === id) {
+      aba.deleteRow(i + 1);
+      return construirResposta({ sucesso: true });
+    }
+  }
+
+  return construirResposta({ erro: 'Membro não encontrado' });
+}
+
+// Retorna a aba "Membros", criando-a se não existir
+function getAbaMembros() {
+  var ss  = SpreadsheetApp.getActiveSpreadsheet();
+  var aba = ss.getSheetByName(NOME_ABA_MEMBROS);
+
+  if (!aba) {
+    aba = ss.insertSheet(NOME_ABA_MEMBROS);
+    aba.appendRow(CABECALHOS_MEMBROS);
+  }
+
+  return aba;
 }
 
 // Retorna a aba "Tarefas", criando-a com cabeçalhos se não existir
