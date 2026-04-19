@@ -60,9 +60,10 @@ function doPost(e) {
     var corpo = JSON.parse(e.postData.contents);
     var acao  = corpo.acao || 'criar';
 
-    if (acao === 'criar')          return acaoCriar(corpo);
-    if (acao === 'concluir')       return acaoConcluir(corpo);
-    if (acao === 'excluir')        return acaoExcluir(corpo);
+    if (acao === 'criar')           return acaoCriar(corpo);
+    if (acao === 'editar')          return acaoEditar(corpo);
+    if (acao === 'concluir')        return acaoConcluir(corpo);
+    if (acao === 'excluir')         return acaoExcluir(corpo);
     if (acao === 'adicionarMembro') return acaoAdicionarMembro(corpo);
     if (acao === 'excluirMembro')   return acaoExcluirMembro(corpo);
 
@@ -87,6 +88,28 @@ function acaoCriar(corpo) {
   planilha.appendRow([id, tarefa, descricao, prioridade, subtarefas, concluido, vencimento, responsavel]);
 
   return construirResposta({ sucesso: true, id: id });
+}
+
+// Edita os campos de uma tarefa existente
+function acaoEditar(corpo) {
+  var id       = String(corpo.id);
+  var planilha = getAba();
+  var dados    = planilha.getDataRange().getValues();
+
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][0]) === id) {
+      var linha = i + 1;
+      planilha.getRange(linha, 2).setValue(corpo.tarefa     || dados[i][1]);
+      planilha.getRange(linha, 3).setValue(corpo.descricao  !== undefined ? corpo.descricao : dados[i][2]);
+      planilha.getRange(linha, 4).setValue(corpo.prioridade || dados[i][3]);
+      planilha.getRange(linha, 5).setValue(JSON.stringify(corpo.subtarefas || parsearJSON(dados[i][4])));
+      planilha.getRange(linha, 7).setValue(corpo.vencimento  !== undefined ? corpo.vencimento  : dados[i][6]);
+      planilha.getRange(linha, 8).setValue(corpo.responsavel !== undefined ? corpo.responsavel : dados[i][7]);
+      return construirResposta({ sucesso: true });
+    }
+  }
+
+  return construirResposta({ erro: 'Tarefa não encontrada: ' + id });
 }
 
 // Atualiza o campo Concluído de uma tarefa existente

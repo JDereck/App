@@ -18,6 +18,35 @@
       --mudo:   #718096;
     }
 
+    body.escuro {
+      --bg:    #1a202c;
+      --card:  #2d3748;
+      --borda: #4a5568;
+      --texto: #f7fafc;
+      --mudo:  #a0aec0;
+    }
+    body.escuro #banner-vencidas { background: #742a2a; border-color: #c53030; color: #fed7d7; }
+    body.escuro .btn-secundario  { background: #4a5568; color: var(--texto); }
+
+    #btn-modo-escuro {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 50%;
+      width: 2.75rem;
+      height: 2.75rem;
+      font-size: 1.25rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #btn-modo-escuro:hover { opacity: .85; }
+
     body {
       font-family: system-ui, -apple-system, sans-serif;
       background: var(--bg);
@@ -302,9 +331,65 @@
       align-self: stretch;
       margin: .1rem 0;
     }
+
+    /* ── Banner de vencidas ── */
+    #banner-vencidas {
+      display: none;
+      max-width: 640px;
+      margin: 0 auto 1rem;
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      color: var(--alta);
+      font-weight: 600;
+      font-size: .9rem;
+      cursor: pointer;
+    }
+    #banner-vencidas:hover { background: #fed7d7; }
+
+    /* ── Modal de edição ── */
+    #overlay-edicao {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    #overlay-edicao.aberto { display: flex; }
+    #modal-edicao {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    #modal-edicao h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+    .modal-acoes { display: flex; gap: .75rem; margin-top: 1.25rem; }
+    .modal-acoes .btn { flex: 1; }
+
+    .btn-editar {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--mudo);
+      font-size: 1rem;
+      padding: .1rem .3rem;
+      border-radius: 4px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .btn-editar:hover { color: #3182ce; background: #ebf8ff; }
   </style>
 </head>
 <body>
+
+<button id="btn-modo-escuro" onclick="alternarModoEscuro()" title="Modo escuro">🌙</button>
 
 <h1>Gerenciador de Tarefas</h1>
 
@@ -334,8 +419,11 @@
   <label for="inp-titulo">Título *</label>
   <input type="text" id="inp-titulo" placeholder="Nome da tarefa" />
 
-  <label for="inp-descricao">Descrição</label>
-  <textarea id="inp-descricao" placeholder="Detalhes opcionais..."></textarea>
+  <button type="button" id="btn-toggle-desc" class="btn btn-secundario" onclick="alternarDescricao()" style="margin-top:.75rem;font-size:.8rem;padding:.3rem .8rem">+ Adicionar descrição</button>
+  <div id="bloco-descricao" style="display:none">
+    <label for="inp-descricao" style="margin-top:.5rem">Descrição</label>
+    <textarea id="inp-descricao" placeholder="Detalhes opcionais..."></textarea>
+  </div>
 
   <label for="inp-prioridade">Prioridade</label>
   <select id="inp-prioridade">
@@ -376,8 +464,54 @@
   <span id="filtros-membros"></span>
 </div>
 
+<!-- ── Ordenação ── -->
+<div style="max-width:640px;margin:0 auto .75rem;display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--mudo)">
+  <span>Ordenar por:</span>
+  <button class="btn-filtro ativo" id="ord-prioridade" onclick="trocarOrdem('prioridade')">Prioridade</button>
+  <button class="btn-filtro"      id="ord-vencimento" onclick="trocarOrdem('vencimento')">Data</button>
+</div>
+
+<!-- ── Banner de tarefas vencidas ── -->
+<div id="banner-vencidas" onclick="filtrarVencidas()"></div>
+
+<!-- ── Modal de edição ── -->
+<div id="overlay-edicao" onclick="fecharEdicao(event)">
+  <div id="modal-edicao">
+    <h2>Editar Tarefa</h2>
+
+    <label for="edit-titulo">Título *</label>
+    <input type="text" id="edit-titulo" />
+
+    <label for="edit-prioridade">Prioridade</label>
+    <select id="edit-prioridade">
+      <option value="Alta">Alta</option>
+      <option value="Média">Média</option>
+      <option value="Baixa">Baixa</option>
+    </select>
+
+    <label for="edit-responsavel">Responsável</label>
+    <select id="edit-responsavel">
+      <option value="">— Ninguém definido —</option>
+    </select>
+
+    <label for="edit-vencimento">Data de vencimento</label>
+    <input type="date" id="edit-vencimento" />
+
+    <label for="edit-descricao">Descrição</label>
+    <textarea id="edit-descricao" placeholder="Detalhes opcionais..."></textarea>
+
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" onclick="fecharEdicao()">Cancelar</button>
+      <button class="btn btn-primario" style="margin-top:0" onclick="salvarEdicao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Lista de tarefas existentes ── -->
-<div id="status">Carregando tarefas...</div>
+<div style="max-width:640px;margin:0 auto .5rem;display:flex;align-items:center;justify-content:space-between;">
+  <div id="status" style="margin:0;min-height:1.2em"></div>
+  <button class="btn btn-secundario" onclick="buscarTarefas()" style="font-size:.8rem;padding:.3rem .8rem">↻ Atualizar</button>
+</div>
 <div id="lista-tarefas"></div>
 
 <script>
@@ -392,6 +526,14 @@
 
   // Filtro ativo
   var filtroAtivo = 'todos';
+  var ordemAtiva  = 'prioridade';
+
+  function trocarOrdem(ord) {
+    ordemAtiva = ord;
+    document.getElementById('ord-prioridade').classList.toggle('ativo', ord === 'prioridade');
+    document.getElementById('ord-vencimento').classList.toggle('ativo', ord === 'vencimento');
+    renderizarTarefas(todasTarefasCache);
+  }
 
   // Lista de membros carregada do servidor
   var membrosCache = [];
@@ -404,6 +546,26 @@
     seta.classList.toggle('recolhido', oculto);
   }
 
+  function alternarDescricao() {
+    var bloco = document.getElementById('bloco-descricao');
+    var btn   = document.getElementById('btn-toggle-desc');
+    var aberto = bloco.style.display === 'none';
+    bloco.style.display = aberto ? '' : 'none';
+    btn.textContent = aberto ? '− Remover descrição' : '+ Adicionar descrição';
+  }
+
+  function alternarModoEscuro() {
+    var escuro = document.body.classList.toggle('escuro');
+    document.getElementById('btn-modo-escuro').textContent = escuro ? '☀️' : '🌙';
+    localStorage.setItem('modoEscuro', escuro ? '1' : '');
+  }
+
+  // Restaura preferência de modo escuro ao carregar
+  if (localStorage.getItem('modoEscuro') === '1') {
+    document.body.classList.add('escuro');
+    document.getElementById('btn-modo-escuro').textContent = '☀️';
+  }
+
   function alternarMembros() {
     var corpo = document.getElementById('corpo-membros');
     var seta  = document.getElementById('seta-membros');
@@ -411,10 +573,9 @@
     seta.classList.toggle('recolhido', oculto);
   }
 
-  // ── Carregamento inicial + atualização automática ─────────────
+  // ── Carregamento inicial ──────────────────────────────────────
   window.addEventListener('DOMContentLoaded', function() {
     buscarMembros().then(buscarTarefas);
-    setInterval(buscarTarefas, 30000);
   });
 
   // ── Buscar membros da casa ────────────────────────────────────
@@ -586,6 +747,8 @@
       // Limpa o formulário
       document.getElementById('inp-titulo').value    = '';
       document.getElementById('inp-descricao').value = '';
+      document.getElementById('bloco-descricao').style.display = 'none';
+      document.getElementById('btn-toggle-desc').textContent   = '+ Adicionar descrição';
       document.getElementById('inp-prioridade').value  = 'Média';
       document.getElementById('inp-responsavel').value = '';
       document.getElementById('inp-vencimento').value  = '';
@@ -628,6 +791,7 @@
   // ── Renderizar todas as tarefas ───────────────────────────────
   function renderizarTarefas(tarefas) {
     todasTarefasCache = tarefas || [];
+    atualizarBannerVencidas(todasTarefasCache);
     var lista = document.getElementById('lista-tarefas');
     lista.innerHTML = '';
 
@@ -652,6 +816,11 @@
 
     var ordemPrioridade = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
     visiveis.sort(function(a, b) {
+      if (ordemAtiva === 'vencimento') {
+        var da = a.vencimento ? a.vencimento.slice(0, 10) : '9999';
+        var db = b.vencimento ? b.vencimento.slice(0, 10) : '9999';
+        return da < db ? -1 : da > db ? 1 : 0;
+      }
       return (ordemPrioridade[a.prioridade] ?? 1) - (ordemPrioridade[b.prioridade] ?? 1);
     });
 
@@ -679,6 +848,12 @@
     badge.className = 'badge badge-' + tarefa.prioridade;
     badge.textContent = tarefa.prioridade;
 
+    var btnEditar = document.createElement('button');
+    btnEditar.className   = 'btn-editar';
+    btnEditar.title       = 'Editar tarefa';
+    btnEditar.textContent = '✎';
+    btnEditar.addEventListener('click', function() { abrirEdicao(tarefa); });
+
     var btnExcluir = document.createElement('button');
     btnExcluir.className   = 'btn-excluir';
     btnExcluir.title       = 'Excluir tarefa';
@@ -691,6 +866,7 @@
 
     cabecalho.appendChild(titulo);
     cabecalho.appendChild(badge);
+    cabecalho.appendChild(btnEditar);
     cabecalho.appendChild(btnExcluir);
     card.appendChild(cabecalho);
 
@@ -809,6 +985,92 @@
     }
 
     salvarConclusao(id, todasMarcadas);
+  }
+
+  // ── Banner de tarefas vencidas ───────────────────────────────
+  function atualizarBannerVencidas(tarefas) {
+    var hoje    = new Date().toISOString().slice(0, 10);
+    var vencidas = tarefas.filter(function(t) {
+      return !t.concluido && t.vencimento && t.vencimento.slice(0, 10) < hoje;
+    });
+    var banner = document.getElementById('banner-vencidas');
+    if (vencidas.length > 0) {
+      banner.style.display = '';
+      banner.textContent   = '⚠ ' + vencidas.length + ' tarefa' + (vencidas.length > 1 ? 's' : '') + ' vencida' + (vencidas.length > 1 ? 's' : '') + ' — clique para ver';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
+  function filtrarVencidas() {
+    var btn = document.querySelector('.btn-filtro[data-filtro="pendente"]');
+    if (btn) { aplicarFiltro(btn); }
+    window.scrollTo({ top: document.getElementById('lista-tarefas').offsetTop - 20, behavior: 'smooth' });
+  }
+
+  // ── Modal de edição ──────────────────────────────────────────
+  var tarefaEmEdicao = null;
+
+  function abrirEdicao(tarefa) {
+    tarefaEmEdicao = tarefa;
+
+    document.getElementById('edit-titulo').value      = tarefa.tarefa     || '';
+    document.getElementById('edit-prioridade').value  = tarefa.prioridade || 'Média';
+    document.getElementById('edit-vencimento').value  = (tarefa.vencimento || '').slice(0, 10);
+    document.getElementById('edit-descricao').value   = tarefa.descricao  || '';
+
+    // Popula select de responsável com membros atuais
+    var sel = document.getElementById('edit-responsavel');
+    sel.innerHTML = '<option value="">— Ninguém definido —</option>';
+    membrosCache.forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m.nome; opt.textContent = m.nome;
+      if (m.nome === tarefa.responsavel) opt.selected = true;
+      sel.appendChild(opt);
+    });
+
+    document.getElementById('overlay-edicao').classList.add('aberto');
+    document.getElementById('edit-titulo').focus();
+  }
+
+  function fecharEdicao(evt) {
+    if (evt && evt.target !== document.getElementById('overlay-edicao')) return;
+    document.getElementById('overlay-edicao').classList.remove('aberto');
+    tarefaEmEdicao = null;
+  }
+
+  async function salvarEdicao() {
+    if (!tarefaEmEdicao) return;
+    var titulo = document.getElementById('edit-titulo').value.trim();
+    if (!titulo) { alert('O título é obrigatório.'); return; }
+
+    var dados = {
+      acao:        'editar',
+      id:          tarefaEmEdicao.id,
+      tarefa:      titulo,
+      prioridade:  document.getElementById('edit-prioridade').value,
+      responsavel: document.getElementById('edit-responsavel').value,
+      vencimento:  document.getElementById('edit-vencimento').value,
+      descricao:   document.getElementById('edit-descricao').value.trim(),
+      subtarefas:  tarefaEmEdicao.subtarefas
+    };
+
+    try {
+      var resposta = await fetch(SCRIPT_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body:    JSON.stringify(dados)
+      });
+      var resultado = await resposta.json();
+      if (resultado.erro) throw new Error(resultado.erro);
+
+      document.getElementById('overlay-edicao').classList.remove('aberto');
+      tarefaEmEdicao = null;
+      await buscarTarefas();
+    } catch (erro) {
+      alert('Erro ao salvar edição.');
+      console.error(erro);
+    }
   }
 
   // Remove a tarefa da planilha e do DOM
