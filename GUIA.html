@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia de Instalação — Gerenciador de Tarefas</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f7fafc;
+      color: #2d3748;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+
+    .pagina {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      text-align: center;
+      margin-bottom: .5rem;
+    }
+    .subtitulo {
+      text-align: center;
+      color: #718096;
+      margin-bottom: 2.5rem;
+      font-size: .95rem;
+    }
+
+    /* ── Seções ── */
+    .secao {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .secao-titulo {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: 1.25rem;
+    }
+    .numero-secao {
+      background: #3182ce;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .numero-secao.verde  { background: #38a169; }
+    .numero-secao.roxo  { background: #6b46c1; }
+    .numero-secao.laranja { background: #dd6b20; }
+
+    .secao-titulo h2 {
+      font-size: 1.15rem;
+    }
+
+    /* ── Passos ── */
+    .passo {
+      display: flex;
+      gap: .75rem;
+      margin-bottom: .85rem;
+      align-items: flex-start;
+    }
+    .passo-num {
+      background: #edf2f7;
+      color: #4a5568;
+      font-weight: 700;
+      font-size: .8rem;
+      min-width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: .1rem;
+    }
+    .passo-texto { font-size: .95rem; }
+    .passo-texto strong { color: #2d3748; }
+
+    /* ── Destaque de caminho / código ── */
+    code {
+      background: #edf2f7;
+      border-radius: 4px;
+      padding: .1rem .4rem;
+      font-size: .88rem;
+      font-family: monospace;
+    }
+    .destaque {
+      background: #ebf8ff;
+      border-left: 4px solid #3182ce;
+      border-radius: 0 6px 6px 0;
+      padding: .65rem 1rem;
+      margin: .75rem 0;
+      font-size: .9rem;
+    }
+    .destaque.verde  { background: #f0fff4; border-color: #38a169; }
+    .destaque.vermelho { background: #fff5f5; border-color: #e53e3e; }
+    .destaque.amarelo { background: #fffff0; border-color: #d69e2e; }
+
+    /* ── Checklist ── */
+    .checklist { list-style: none; }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: .6rem;
+      padding: .5rem 0;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: .93rem;
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .checklist input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      margin-top: .1rem;
+      cursor: pointer;
+    }
+    .checklist label { cursor: pointer; }
+    .checklist label span {
+      display: block;
+      font-size: .8rem;
+      color: #718096;
+      margin-top: .1rem;
+    }
+
+    /* ── Erros comuns ── */
+    .erro-item {
+      border: 1px solid #fed7d7;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+      margin-bottom: .75rem;
+      background: #fff5f5;
+    }
+    .erro-item h4 { color: #c53030; font-size: .9rem; margin-bottom: .3rem; }
+    .erro-item p  { font-size: .88rem; color: #2d3748; }
+
+    /* ── Badge de opção ── */
+    .opcao-badge {
+      display: inline-block;
+      background: #6b46c1;
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: .1rem .45rem;
+      border-radius: 4px;
+      margin-left: .3rem;
+    }
+    .opcao-badge.gratis { background: #38a169; }
+
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.25rem 0; }
+
+    footer {
+      text-align: center;
+      color: #a0aec0;
+      font-size: .8rem;
+      margin-top: 2rem;
+      padding-bottom: 2rem;
+    }
+  </style>
+</head>
+<body>
+<div class="pagina">
+
+  <h1>Guia de Instalação</h1>
+  <p class="subtitulo">Gerenciador de Tarefas com Google Sheets — passo a passo completo</p>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- ETAPA 1 — PLANILHA                                        -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <div class="numero-secao">1</div>
+      <h2>Criar a Planilha no Google Sheets</h2>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">1</div>
+      <div class="passo-texto">Acesse <strong>sheets.google.com</strong> (precisa de conta Google)</div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">2</div>
+      <div class="passo-texto">Clique no botão <strong>+</strong> para criar uma planilha em branco</div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">3</div>
+      <div class="passo-texto">Dê um nome para a planilha, por exemplo: <code>Gerenciador de Tarefas</code></div>
+    </div>
+
+    <div class="destaque verde">
+      Não precisa criar colunas manualmente. O sistema cria tudo automaticamente na primeira vez.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- ETAPA 2 — APPS SCRIPT                                     -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <div class="numero-secao">2</div>
+      <h2>Instalar o Backend (Apps Script)</h2>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">1</div>
+      <div class="passo-texto">Dentro da planilha, clique no menu <strong>Extensões</strong> → <strong>Apps Script</strong></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">2</div>
+      <div class="passo-texto">Uma nova aba vai abrir com um editor de código. <strong>Selecione todo o texto</strong> que aparece (Ctrl+A) e <strong>apague tudo</strong></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">3</div>
+      <div class="passo-texto">Abra o arquivo <code>script.gs</code> que está na pasta do projeto, copie todo o conteúdo (Ctrl+A → Ctrl+C) e cole no editor do Apps Script (Ctrl+V)</div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">4</div>
+      <div class="passo-texto">Clique no ícone de <strong>disquete</strong> ou pressione <strong>Ctrl+S</strong> para salvar. Quando pedir nome do projeto, pode colocar <code>GerenciadorTarefas</code></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- ETAPA 3 — PUBLICAR                                        -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <div class="numero-secao verde">3</div>
+      <h2>Publicar como Aplicativo da Web</h2>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">1</div>
+      <div class="passo-texto">No editor do Apps Script, clique no botão azul <strong>Implantar</strong> (canto superior direito) → <strong>Nova implantação</strong></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">2</div>
+      <div class="passo-texto">Clique no ícone de <strong>engrenagem ⚙</strong> ao lado de "Selecionar tipo" → escolha <strong>Aplicativo da Web</strong></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">3</div>
+      <div class="passo-texto">Configure assim:
+        <br>• <strong>Descrição:</strong> pode deixar em branco ou escrever "versão 1"
+        <br>• <strong>Executar como:</strong> <code>Eu (seu e-mail)</code>
+        <br>• <strong>Quem tem acesso:</strong> <code>Qualquer pessoa</code>
+      </div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">4</div>
+      <div class="passo-texto">Clique em <strong>Implantar</strong></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">5</div>
+      <div class="passo-texto">Vai aparecer uma tela pedindo autorização. Clique em <strong>Autorizar acesso</strong>, escolha sua conta Google, depois clique em <strong>Avançado</strong> → <strong>"Acessar GerenciadorTarefas (não seguro)"</strong> → <strong>Permitir</strong></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">6</div>
+      <div class="passo-texto"><strong>Copie a URL do aplicativo da Web</strong> que aparece — ela começa com <code>https://script.google.com/macros/s/...</code>. Guarde essa URL!</div>
+    </div>
+
+    <div class="destaque amarelo">
+      ⚠ A tela de "não seguro" é normal para scripts pessoais. O Google exibe isso porque o script não passou por uma revisão oficial. Pode prosseguir com segurança — é o seu próprio script.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- ETAPA 4 — CONECTAR                                        -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <div class="numero-secao laranja">4</div>
+      <h2>Conectar o Frontend à Planilha</h2>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">1</div>
+      <div class="passo-texto">Abra o arquivo <code>index.html</code> em um editor de texto (pode ser o Bloco de Notas)</div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">2</div>
+      <div class="passo-texto">Use Ctrl+F para buscar por: <code>COLE_SUA_URL_AQUI</code></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">3</div>
+      <div class="passo-texto">Substitua <code>COLE_SUA_URL_AQUI</code> pela URL que você copiou na Etapa 3. <strong>Mantenha as aspas!</strong>
+        <br>Exemplo: <code>var SCRIPT_URL = 'https://script.google.com/macros/s/ABC123/exec';</code>
+      </div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">4</div>
+      <div class="passo-texto">Salve o arquivo (Ctrl+S)</div>
+    </div>
+
+    <div class="destaque verde">
+      Agora você pode abrir o <code>index.html</code> direto no navegador e o sistema já funciona!
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- ETAPA 5 — HOSPEDAR (OPCIONAL)                             -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <div class="numero-secao roxo">5</div>
+      <h2>Colocar Online (para acessar de qualquer lugar)</h2>
+    </div>
+
+    <p style="font-size:.9rem;color:#718096;margin-bottom:1rem">
+      Sem hospedar, o arquivo só funciona no computador onde está salvo. Para acessar no tablet ou compartilhar com a família, escolha uma opção abaixo:
+    </p>
+
+    <hr>
+
+    <strong>Opção A — Netlify Drop</strong> <span class="opcao-badge gratis">Grátis</span> <span class="opcao-badge">Mais fácil</span>
+    <div class="passo" style="margin-top:.75rem">
+      <div class="passo-num">1</div>
+      <div class="passo-texto">Acesse <strong>app.netlify.com/drop</strong> no navegador</div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">2</div>
+      <div class="passo-texto">Arraste o arquivo <code>index.html</code> para a área indicada</div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">3</div>
+      <div class="passo-texto">Pronto! O Netlify gera um link como <code>https://nome-aleatorio.netlify.app</code>. Esse link funciona em qualquer celular ou tablet.</div>
+    </div>
+
+    <hr>
+
+    <strong>Opção B — GitHub Pages</strong> <span class="opcao-badge gratis">Grátis</span> <span class="opcao-badge">Link personalizado</span>
+    <div class="passo" style="margin-top:.75rem">
+      <div class="passo-num">1</div>
+      <div class="passo-texto">Crie uma conta em <strong>github.com</strong> se ainda não tiver</div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">2</div>
+      <div class="passo-texto">Crie um repositório novo e faça upload do <code>index.html</code></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">3</div>
+      <div class="passo-texto">Vá em <strong>Settings → Pages → Source → main → / (root)</strong> e salve. Em alguns minutos o link fica ativo.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- CHECKLIST DE TESTES                                        -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <div class="numero-secao verde">✓</div>
+      <h2>Checklist de Testes — faça um por vez</h2>
+    </div>
+
+    <p style="font-size:.88rem;color:#718096;margin-bottom:1rem">Marque cada item após confirmar que funcionou:</p>
+
+    <ul class="checklist">
+
+      <li>
+        <input type="checkbox" id="t1">
+        <label for="t1">
+          <strong>Página abre sem erro</strong>
+          <span>Abra o index.html. Deve aparecer o título "Gerenciador de Tarefas" e a mensagem "Carregando tarefas..." por alguns segundos e depois sumir.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t2">
+        <label for="t2">
+          <strong>Criar membro da casa</strong>
+          <span>Clique em "Membros da Casa" para abrir. Digite um nome (ex: "Mãe") e clique Adicionar. O nome deve aparecer na lista e no campo Responsável do formulário.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t3">
+        <label for="t3">
+          <strong>Membro aparece na planilha</strong>
+          <span>Abra a planilha no Google Sheets. Deve ter uma aba chamada "Membros" com o nome que você cadastrou.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t4">
+        <label for="t4">
+          <strong>Criar tarefa simples</strong>
+          <span>Preencha só o título (ex: "Lavar louça"), escolha prioridade Alta e clique "Criar Tarefa". A tarefa deve aparecer na lista.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t5">
+        <label for="t5">
+          <strong>Tarefa aparece na planilha</strong>
+          <span>Na aba "Tarefas" da planilha deve ter a linha com os dados. A coluna "Concluído" deve estar como FALSE.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t6">
+        <label for="t6">
+          <strong>Criar tarefa com subtarefas</strong>
+          <span>Crie uma tarefa com 2 subtarefas (ex: "Comprar leite" e "Comprar pão"). As subtarefas devem aparecer no card com checkbox.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t7">
+        <label for="t7">
+          <strong>Marcar subtarefas — conclusão parcial</strong>
+          <span>Marque apenas 1 das 2 subtarefas. O contador deve mostrar "1/2". A tarefa NÃO deve ficar riscada ainda.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t8">
+        <label for="t8">
+          <strong>Marcar todas as subtarefas — conclusão total</strong>
+          <span>Marque a segunda subtarefa também. A tarefa deve ficar acinzentada, com o título riscado e aparecer "✓ Concluída". Na planilha a coluna "Concluído" muda para TRUE.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t9">
+        <label for="t9">
+          <strong>Criar tarefa com data de vencimento</strong>
+          <span>Crie uma tarefa com uma data já passada. Deve aparecer "⚠ Venceu em..." em vermelho no card e o banner de alerta no topo.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t10">
+        <label for="t10">
+          <strong>Editar tarefa</strong>
+          <span>Clique no botão ✎ de uma tarefa. O modal deve abrir com os dados atuais. Mude o título, clique Salvar. O card deve atualizar com o novo título.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t11">
+        <label for="t11">
+          <strong>Filtros funcionando</strong>
+          <span>Com pelo menos 2 tarefas (uma concluída, uma pendente), clique em "Pendentes" — deve mostrar só as abertas. Clique em "Concluídas" — só as finalizadas. Clique em "Todas" para voltar.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t12">
+        <label for="t12">
+          <strong>Filtro por membro</strong>
+          <span>Crie duas tarefas com responsáveis diferentes. Clique no botão roxo com o nome de um membro — deve mostrar só as tarefas daquela pessoa.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t13">
+        <label for="t13">
+          <strong>Ordenação por data</strong>
+          <span>Com tarefas com datas diferentes, clique em "Data" na barra de ordenação. As tarefas devem se reorganizar pela data mais próxima primeiro.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t14">
+        <label for="t14">
+          <strong>Excluir tarefa</strong>
+          <span>Clique no ✕ de uma tarefa e confirme. A tarefa some da tela e da planilha.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t15">
+        <label for="t15">
+          <strong>Modo escuro</strong>
+          <span>Clique no botão 🌙 no canto inferior direito. A tela deve ficar escura. Feche o navegador, reabra — deve continuar escuro.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t16">
+        <label for="t16">
+          <strong>Botão Atualizar</strong>
+          <span>Adicione uma tarefa direto na planilha (linha nova). Volte ao sistema e clique em "↻ Atualizar" — a tarefa deve aparecer.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t17">
+        <label for="t17">
+          <strong>Acessar do tablet ou celular</strong>
+          <span>Se já hospedou o arquivo (Etapa 5), abra o link no tablet. Tudo deve carregar normalmente, sem precisar de login.</span>
+        </label>
+      </li>
+
+      <li>
+        <input type="checkbox" id="t18">
+        <label for="t18">
+          <strong>Outra pessoa acessando e criando tarefa</strong>
+          <span>Mande o link para alguém da família. Peça para criar uma tarefa. Você deve ver a tarefa aparecer quando clicar em "↻ Atualizar".</span>
+        </label>
+      </li>
+
+    </ul>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- ERROS COMUNS                                               -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <div class="numero-secao" style="background:#e53e3e">!</div>
+      <h2>Erros Comuns e Como Resolver</h2>
+    </div>
+
+    <div class="erro-item">
+      <h4>❌ "Erro ao carregar. Verifique se a URL do script está correta."</h4>
+      <p>A URL no <code>index.html</code> está errada ou ainda como <code>COLE_SUA_URL_AQUI</code>. Volte na Etapa 4 e confirme que a URL foi colada corretamente com as aspas.</p>
+    </div>
+
+    <div class="erro-item">
+      <h4>❌ A tarefa não aparece na planilha após criar</h4>
+      <p>O script não foi reimplantado após uma alteração. Vá em Apps Script → Implantar → Gerenciar implantações → edite a implantação existente → escolha "Nova versão" e clique Implantar.</p>
+    </div>
+
+    <div class="erro-item">
+      <h4>❌ Tela de autorização aparece em inglês ou pede permissão estranha</h4>
+      <p>É normal. O Google exige autorização porque o script acessa sua planilha. Clique em Avançado → "Acessar [nome do projeto] (não seguro)" → Permitir. Isso só aparece uma vez.</p>
+    </div>
+
+    <div class="erro-item">
+      <h4>❌ Conclusão não salva na planilha (coluna continua FALSE)</h4>
+      <p>Acontece quando o script foi atualizado mas não foi reimplantado. Sempre que mudar o <code>script.gs</code>, precisa criar uma nova versão na implantação.</p>
+    </div>
+
+    <div class="erro-item">
+      <h4>❌ No tablet aparece tela em branco ou erro de rede</h4>
+      <p>O <code>index.html</code> foi aberto como arquivo local no tablet, não pelo link hospedado. Para funcionar em outros dispositivos, é obrigatório hospedar (Etapa 5).</p>
+    </div>
+
+    <div class="erro-item">
+      <h4>❌ Campo Responsável aparece vazio no select</h4>
+      <p>Nenhum membro foi cadastrado ainda. Abra a seção "Membros da Casa" no topo do sistema e adicione os nomes da família primeiro.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- REIMPLANTAR APÓS ATUALIZAR                                 -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <div class="numero-secao laranja">↻</div>
+      <h2>Como Atualizar o Script (quando necessário)</h2>
+    </div>
+
+    <p style="font-size:.9rem;color:#718096;margin-bottom:1rem">
+      Toda vez que o arquivo <code>script.gs</code> for alterado, é preciso criar uma nova versão na implantação. Sem isso, o servidor continua usando o código antigo.
+    </p>
+
+    <div class="passo">
+      <div class="passo-num">1</div>
+      <div class="passo-texto">No editor do Apps Script, clique em <strong>Implantar → Gerenciar implantações</strong></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">2</div>
+      <div class="passo-texto">Clique no ícone de <strong>lápis ✎</strong> na implantação existente</div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">3</div>
+      <div class="passo-texto">Em "Versão", selecione <strong>"Nova versão"</strong></div>
+    </div>
+    <div class="passo">
+      <div class="passo-num">4</div>
+      <div class="passo-texto">Clique em <strong>Implantar</strong>. A URL continua a mesma — não precisa atualizar o <code>index.html</code>.</div>
+    </div>
+
+    <div class="destaque verde">
+      A URL do seu sistema <strong>não muda</strong> ao criar novas versões. Só o comportamento do servidor é atualizado.
+    </div>
+  </div>
+
+  <footer>
+    Gerenciador de Tarefas — Sistema familiar com Google Sheets
+  </footer>
+
+</div>
+
+<script>
+  // Salva estado dos checkboxes no localStorage
+  document.querySelectorAll('.checklist input[type="checkbox"]').forEach(function(cb) {
+    if (localStorage.getItem('teste_' + cb.id) === '1') cb.checked = true;
+    cb.addEventListener('change', function() {
+      localStorage.setItem('teste_' + cb.id, cb.checked ? '1' : '');
+      cb.closest('li').style.opacity = cb.checked ? '.5' : '1';
+    });
+    if (cb.checked) cb.closest('li').style.opacity = '.5';
+  });
+</script>
+</body>
+</html>
