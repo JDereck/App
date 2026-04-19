@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerenciador de Tarefas</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --alta:   #e53e3e;
+      --media:  #dd6b20;
+      --baixa:  #38a169;
+      --bg:     #f7fafc;
+      --card:   #ffffff;
+      --borda:  #e2e8f0;
+      --texto:  #2d3748;
+      --mudo:   #718096;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--texto);
+      padding: 2rem 1rem;
+    }
+
+    h1 { text-align: center; margin-bottom: 2rem; font-size: 1.8rem; }
+
+    /* ── Formulário ── */
+    #card-formulario {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-width: 640px;
+      margin: 0 auto 2rem;
+    }
+    #card-formulario h2 { margin-bottom: 1rem; font-size: 1.2rem; }
+
+    label {
+      display: block;
+      font-size: .875rem;
+      font-weight: 600;
+      margin-top: .85rem;
+      margin-bottom: .25rem;
+    }
+
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: .5rem .75rem;
+      border: 1px solid var(--borda);
+      border-radius: 6px;
+      font-size: 1rem;
+      background: var(--bg);
+      color: var(--texto);
+    }
+
+    textarea { resize: vertical; min-height: 70px; }
+
+    .linha-subtarefa { display: flex; gap: .5rem; margin-top: .5rem; }
+    .linha-subtarefa input { flex: 1; }
+
+    #lista-subtarefas-temp { list-style: none; margin-top: .5rem; }
+    #lista-subtarefas-temp li {
+      font-size: .875rem;
+      padding: .2rem 0;
+      color: var(--mudo);
+    }
+    #lista-subtarefas-temp li::before { content: '• '; }
+
+    .btn {
+      padding: .5rem 1.1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .95rem;
+      font-weight: 600;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-secundario { background: #edf2f7; color: var(--texto); }
+    .btn-primario {
+      background: #3182ce;
+      color: #fff;
+      display: block;
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: .65rem;
+      font-size: 1rem;
+    }
+
+    /* ── Lista de tarefas ── */
+    #lista-tarefas {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .card-tarefa {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 8px;
+      padding: 1.25rem;
+      transition: opacity .2s;
+    }
+    .card-tarefa.concluida { opacity: .55; }
+
+    .cabecalho-tarefa {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: .5rem;
+    }
+
+    .titulo-tarefa { font-size: 1.05rem; font-weight: 700; }
+    .card-tarefa.concluida .titulo-tarefa { text-decoration: line-through; }
+
+    .badge {
+      font-size: .72rem;
+      font-weight: 700;
+      padding: .15rem .55rem;
+      border-radius: 99px;
+      color: #fff;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .badge-Alta  { background: var(--alta); }
+    .badge-Média { background: var(--media); }
+    .badge-Baixa { background: var(--baixa); }
+
+    .descricao-tarefa {
+      font-size: .875rem;
+      color: var(--mudo);
+      margin-top: .35rem;
+    }
+
+    .secao-subtarefas {
+      margin-top: .75rem;
+      border-top: 1px solid var(--borda);
+      padding-top: .65rem;
+    }
+    .secao-subtarefas h4 {
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--mudo);
+      margin-bottom: .4rem;
+    }
+
+    .item-subtarefa {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .9rem;
+      margin-bottom: .25rem;
+    }
+    .item-subtarefa input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .badge-concluida {
+      font-size: .85rem;
+      color: var(--baixa);
+      font-weight: 700;
+      margin-top: .6rem;
+    }
+
+    #status {
+      text-align: center;
+      color: var(--mudo);
+      font-size: .9rem;
+      margin-bottom: 1rem;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Gerenciador de Tarefas</h1>
+
+<!-- ── Formulário de criação ── -->
+<div id="card-formulario">
+  <h2>Nova Tarefa</h2>
+
+  <label for="inp-titulo">Título *</label>
+  <input type="text" id="inp-titulo" placeholder="Nome da tarefa" />
+
+  <label for="inp-descricao">Descrição</label>
+  <textarea id="inp-descricao" placeholder="Detalhes opcionais..."></textarea>
+
+  <label for="inp-prioridade">Prioridade</label>
+  <select id="inp-prioridade">
+    <option value="Alta">Alta</option>
+    <option value="Média" selected>Média</option>
+    <option value="Baixa">Baixa</option>
+  </select>
+
+  <label>Subtarefas</label>
+  <div class="linha-subtarefa">
+    <input type="text" id="inp-subtarefa" placeholder="Descrição da subtarefa" />
+    <button class="btn btn-secundario" onclick="adicionarSubtarefa()">Adicionar</button>
+  </div>
+  <ul id="lista-subtarefas-temp"></ul>
+
+  <button class="btn btn-primario" onclick="criarTarefa()">Criar Tarefa</button>
+</div>
+
+<!-- ── Lista de tarefas existentes ── -->
+<div id="status">Carregando tarefas...</div>
+<div id="lista-tarefas"></div>
+
+<script>
+  // ================================================================
+  // SUBSTITUA a URL abaixo pela URL do seu Apps Script implantado!
+  // Exemplo: https://script.google.com/macros/s/SEU_ID/exec
+  // ================================================================
+  var SCRIPT_URL = 'COLE_SUA_URL_AQUI';
+
+  // Buffer temporário de subtarefas antes de criar a tarefa
+  var bufferSubtarefas = [];
+
+  // ── Carregamento inicial ──────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', buscarTarefas);
+
+  // Permite adicionar subtarefa pressionando Enter
+  document.getElementById('inp-subtarefa').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); adicionarSubtarefa(); }
+  });
+
+  // ── Buscar tarefas do Google Sheets ──────────────────────────
+  async function buscarTarefas() {
+    definirStatus('Carregando tarefas...');
+    try {
+      var resposta = await fetch(SCRIPT_URL);
+      if (!resposta.ok) throw new Error('Resposta inválida');
+      var tarefas = await resposta.json();
+      renderizarTarefas(tarefas);
+      definirStatus('');
+    } catch (erro) {
+      definirStatus('Erro ao carregar. Verifique se a URL do script está correta.');
+      console.error(erro);
+    }
+  }
+
+  // ── Criar nova tarefa ─────────────────────────────────────────
+  async function criarTarefa() {
+    var titulo = document.getElementById('inp-titulo').value.trim();
+    if (!titulo) {
+      alert('O título da tarefa é obrigatório.');
+      return;
+    }
+
+    var dados = {
+      tarefa:     titulo,
+      descricao:  document.getElementById('inp-descricao').value.trim(),
+      prioridade: document.getElementById('inp-prioridade').value,
+      subtarefas: bufferSubtarefas.slice()
+    };
+
+    definirStatus('Salvando tarefa...');
+    try {
+      // Content-Type text/plain evita preflight CORS que o Apps Script não suporta.
+      // O corpo continua sendo JSON válido e e.postData.contents lê corretamente.
+      var resposta = await fetch(SCRIPT_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body:    JSON.stringify(dados)
+      });
+      var resultado = await resposta.json();
+      if (resultado.erro) throw new Error(resultado.erro);
+
+      // Limpa o formulário
+      document.getElementById('inp-titulo').value    = '';
+      document.getElementById('inp-descricao').value = '';
+      document.getElementById('inp-prioridade').value = 'Média';
+      bufferSubtarefas = [];
+      document.getElementById('lista-subtarefas-temp').innerHTML = '';
+
+      await buscarTarefas();
+    } catch (erro) {
+      definirStatus('Erro ao salvar. Tente novamente.');
+      console.error(erro);
+    }
+  }
+
+  // ── Adicionar subtarefa ao buffer do formulário ───────────────
+  function adicionarSubtarefa() {
+    var inp = document.getElementById('inp-subtarefa');
+    var valor = inp.value.trim();
+    if (!valor) return;
+
+    bufferSubtarefas.push(valor);
+    inp.value = '';
+
+    var li = document.createElement('li');
+    li.textContent = valor;
+    document.getElementById('lista-subtarefas-temp').appendChild(li);
+    inp.focus();
+  }
+
+  // ── Renderizar todas as tarefas ───────────────────────────────
+  function renderizarTarefas(tarefas) {
+    var lista = document.getElementById('lista-tarefas');
+    lista.innerHTML = '';
+
+    if (!tarefas || tarefas.length === 0) {
+      lista.innerHTML = '<p style="text-align:center;color:var(--mudo)">Nenhuma tarefa ainda. Crie a primeira acima!</p>';
+      return;
+    }
+
+    var ordemPrioridade = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
+    tarefas.sort(function(a, b) {
+      return (ordemPrioridade[a.prioridade] ?? 1) - (ordemPrioridade[b.prioridade] ?? 1);
+    });
+
+    tarefas.forEach(function(tarefa) {
+      lista.appendChild(construirCardTarefa(tarefa));
+    });
+  }
+
+  // ── Construir card de uma tarefa ──────────────────────────────
+  function construirCardTarefa(tarefa) {
+    var card = document.createElement('div');
+    card.className = 'card-tarefa' + (tarefa.concluido ? ' concluida' : '');
+
+    var subtarefas = Array.isArray(tarefa.subtarefas) ? tarefa.subtarefas : [];
+
+    // Cabeçalho: título + badge de prioridade
+    var cabecalho = document.createElement('div');
+    cabecalho.className = 'cabecalho-tarefa';
+
+    var titulo = document.createElement('span');
+    titulo.className = 'titulo-tarefa';
+    titulo.textContent = tarefa.tarefa;
+
+    var badge = document.createElement('span');
+    badge.className = 'badge badge-' + tarefa.prioridade;
+    badge.textContent = tarefa.prioridade;
+
+    cabecalho.appendChild(titulo);
+    cabecalho.appendChild(badge);
+    card.appendChild(cabecalho);
+
+    // Descrição (se houver)
+    if (tarefa.descricao) {
+      var desc = document.createElement('p');
+      desc.className = 'descricao-tarefa';
+      desc.textContent = tarefa.descricao;
+      card.appendChild(desc);
+    }
+
+    // Subtarefas com checkboxes
+    if (subtarefas.length > 0) {
+      var secao = document.createElement('div');
+      secao.className = 'secao-subtarefas';
+
+      var h4 = document.createElement('h4');
+      h4.textContent = 'Subtarefas';
+      secao.appendChild(h4);
+
+      subtarefas.forEach(function(sub, idx) {
+        var item = document.createElement('div');
+        item.className = 'item-subtarefa';
+
+        var cb = document.createElement('input');
+        cb.type    = 'checkbox';
+        cb.id      = 'cb-' + tarefa.id + '-' + idx;
+        cb.checked = tarefa.concluido;
+        cb.addEventListener('change', function() {
+          verificarConclusao(card, secao);
+        });
+
+        var lbl = document.createElement('label');
+        lbl.htmlFor     = cb.id;
+        lbl.textContent = sub;
+
+        item.appendChild(cb);
+        item.appendChild(lbl);
+        secao.appendChild(item);
+      });
+
+      card.appendChild(secao);
+    }
+
+    // Badge de concluída (se já estiver concluída ao carregar)
+    if (tarefa.concluido) {
+      card.appendChild(criarBadgeConcluida());
+    }
+
+    return card;
+  }
+
+  // ── Verificar se a tarefa deve ser marcada como concluída ─────
+  // A tarefa SÓ fica concluída quando TODAS as subtarefas estão marcadas.
+  function verificarConclusao(card, secao) {
+    var checkboxes = secao.querySelectorAll('input[type="checkbox"]');
+    var todasMarcadas = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+
+    if (todasMarcadas) {
+      card.classList.add('concluida');
+      if (!card.querySelector('.badge-concluida')) {
+        card.appendChild(criarBadgeConcluida());
+      }
+    } else {
+      card.classList.remove('concluida');
+      var existente = card.querySelector('.badge-concluida');
+      if (existente) existente.remove();
+    }
+  }
+
+  function criarBadgeConcluida() {
+    var p = document.createElement('p');
+    p.className   = 'badge-concluida';
+    p.textContent = '✓ Concluída';
+    return p;
+  }
+
+  // ── Atualizar mensagem de status ──────────────────────────────
+  function definirStatus(msg) {
+    document.getElementById('status').textContent = msg;
+  }
+</script>
+</body>
+</html>
