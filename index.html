@@ -36,7 +36,18 @@
       max-width: 640px;
       margin: 0 auto 2rem;
     }
-    #card-formulario h2 { margin-bottom: 1rem; font-size: 1.2rem; }
+    #cabecalho-formulario {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+    #cabecalho-formulario h2 { font-size: 1.2rem; margin: 0; }
+    #seta-formulario { font-size: 1rem; color: var(--mudo); transition: transform .2s; }
+    #seta-formulario.recolhido { transform: rotate(-90deg); }
+    #corpo-formulario { margin-top: 1rem; }
+    #corpo-formulario.oculto { display: none; }
 
     label {
       display: block;
@@ -147,7 +158,17 @@
       letter-spacing: .05em;
       color: var(--mudo);
       margin-bottom: .4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
+
+    .contador-progresso {
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--mudo);
+    }
+    .contador-progresso.completo { color: var(--baixa); }
 
     .item-subtarefa {
       display: flex;
@@ -170,6 +191,33 @@
       margin-top: .6rem;
     }
 
+    .responsavel {
+      font-size: .8rem;
+      color: var(--mudo);
+      margin-top: .2rem;
+    }
+
+    .data-vencimento {
+      font-size: .8rem;
+      color: var(--mudo);
+      margin-top: .3rem;
+    }
+    .data-vencimento.vencida { color: var(--alta); font-weight: 700; }
+    .data-vencimento.hoje    { color: var(--media); font-weight: 700; }
+
+    .btn-excluir {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--mudo);
+      font-size: 1.1rem;
+      padding: .1rem .3rem;
+      border-radius: 4px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .btn-excluir:hover { color: var(--alta); background: #fff5f5; }
+
     #status {
       text-align: center;
       color: var(--mudo);
@@ -177,6 +225,27 @@
       margin-bottom: 1rem;
       min-height: 1.2em;
     }
+
+    #barra-filtros {
+      max-width: 640px;
+      margin: 0 auto 1rem;
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-filtro {
+      padding: .35rem .85rem;
+      border: 1px solid var(--borda);
+      border-radius: 99px;
+      background: var(--card);
+      color: var(--mudo);
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-filtro:hover  { border-color: #a0aec0; color: var(--texto); }
+    .btn-filtro.ativo  { background: var(--texto); color: #fff; border-color: var(--texto); }
   </style>
 </head>
 <body>
@@ -185,8 +254,12 @@
 
 <!-- ── Formulário de criação ── -->
 <div id="card-formulario">
-  <h2>Nova Tarefa</h2>
+  <div id="cabecalho-formulario" onclick="alternarFormulario()">
+    <h2>Nova Tarefa</h2>
+    <span id="seta-formulario">▼</span>
+  </div>
 
+  <div id="corpo-formulario">
   <label for="inp-titulo">Título *</label>
   <input type="text" id="inp-titulo" placeholder="Nome da tarefa" />
 
@@ -200,6 +273,12 @@
     <option value="Baixa">Baixa</option>
   </select>
 
+  <label for="inp-responsavel">Responsável</label>
+  <input type="text" id="inp-responsavel" placeholder="Nome de quem vai fazer" />
+
+  <label for="inp-vencimento">Data de vencimento</label>
+  <input type="date" id="inp-vencimento" />
+
   <label>Subtarefas</label>
   <div class="linha-subtarefa">
     <input type="text" id="inp-subtarefa" placeholder="Descrição da subtarefa" />
@@ -208,6 +287,17 @@
   <ul id="lista-subtarefas-temp"></ul>
 
   <button class="btn btn-primario" onclick="criarTarefa()">Criar Tarefa</button>
+  </div><!-- fim #corpo-formulario -->
+</div>
+
+<!-- ── Filtros ── -->
+<div id="barra-filtros">
+  <button class="btn-filtro ativo" data-filtro="todos"    onclick="aplicarFiltro(this)">Todas</button>
+  <button class="btn-filtro"       data-filtro="pendente" onclick="aplicarFiltro(this)">Pendentes</button>
+  <button class="btn-filtro"       data-filtro="concluida" onclick="aplicarFiltro(this)">Concluídas</button>
+  <button class="btn-filtro"       data-filtro="Alta"     onclick="aplicarFiltro(this)">Alta</button>
+  <button class="btn-filtro"       data-filtro="Média"    onclick="aplicarFiltro(this)">Média</button>
+  <button class="btn-filtro"       data-filtro="Baixa"    onclick="aplicarFiltro(this)">Baixa</button>
 </div>
 
 <!-- ── Lista de tarefas existentes ── -->
@@ -224,8 +314,22 @@
   // Buffer temporário de subtarefas antes de criar a tarefa
   var bufferSubtarefas = [];
 
-  // ── Carregamento inicial ──────────────────────────────────────
-  window.addEventListener('DOMContentLoaded', buscarTarefas);
+  // Filtro ativo
+  var filtroAtivo = 'todos';
+
+  // ── Formulário recolhível ────────────────────────────────────
+  function alternarFormulario() {
+    var corpo = document.getElementById('corpo-formulario');
+    var seta  = document.getElementById('seta-formulario');
+    var oculto = corpo.classList.toggle('oculto');
+    seta.classList.toggle('recolhido', oculto);
+  }
+
+  // ── Carregamento inicial + atualização automática ─────────────
+  window.addEventListener('DOMContentLoaded', function() {
+    buscarTarefas();
+    setInterval(buscarTarefas, 30000); // atualiza a cada 30 segundos
+  });
 
   // Permite adicionar subtarefa pressionando Enter
   document.getElementById('inp-subtarefa').addEventListener('keydown', function(e) {
@@ -256,10 +360,12 @@
     }
 
     var dados = {
-      tarefa:     titulo,
-      descricao:  document.getElementById('inp-descricao').value.trim(),
-      prioridade: document.getElementById('inp-prioridade').value,
-      subtarefas: bufferSubtarefas.slice()
+      tarefa:      titulo,
+      descricao:   document.getElementById('inp-descricao').value.trim(),
+      prioridade:  document.getElementById('inp-prioridade').value,
+      responsavel: document.getElementById('inp-responsavel').value.trim(),
+      vencimento:  document.getElementById('inp-vencimento').value,
+      subtarefas:  bufferSubtarefas.slice()
     };
 
     definirStatus('Salvando tarefa...');
@@ -277,7 +383,9 @@
       // Limpa o formulário
       document.getElementById('inp-titulo').value    = '';
       document.getElementById('inp-descricao').value = '';
-      document.getElementById('inp-prioridade').value = 'Média';
+      document.getElementById('inp-prioridade').value  = 'Média';
+      document.getElementById('inp-responsavel').value = '';
+      document.getElementById('inp-vencimento').value  = '';
       bufferSubtarefas = [];
       document.getElementById('lista-subtarefas-temp').innerHTML = '';
 
@@ -303,8 +411,19 @@
     inp.focus();
   }
 
+  // ── Filtros ───────────────────────────────────────────────────
+  var todasTarefasCache = [];
+
+  function aplicarFiltro(btn) {
+    document.querySelectorAll('.btn-filtro').forEach(function(b) { b.classList.remove('ativo'); });
+    btn.classList.add('ativo');
+    filtroAtivo = btn.dataset.filtro;
+    renderizarTarefas(todasTarefasCache);
+  }
+
   // ── Renderizar todas as tarefas ───────────────────────────────
   function renderizarTarefas(tarefas) {
+    todasTarefasCache = tarefas || [];
     var lista = document.getElementById('lista-tarefas');
     lista.innerHTML = '';
 
@@ -313,12 +432,25 @@
       return;
     }
 
+    // Aplica filtro
+    var visiveis = tarefas.filter(function(t) {
+      if (filtroAtivo === 'todos')     return true;
+      if (filtroAtivo === 'pendente')  return !t.concluido;
+      if (filtroAtivo === 'concluida') return t.concluido;
+      return t.prioridade === filtroAtivo;
+    });
+
+    if (visiveis.length === 0) {
+      lista.innerHTML = '<p style="text-align:center;color:var(--mudo)">Nenhuma tarefa neste filtro.</p>';
+      return;
+    }
+
     var ordemPrioridade = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
-    tarefas.sort(function(a, b) {
+    visiveis.sort(function(a, b) {
       return (ordemPrioridade[a.prioridade] ?? 1) - (ordemPrioridade[b.prioridade] ?? 1);
     });
 
-    tarefas.forEach(function(tarefa) {
+    visiveis.forEach(function(tarefa) {
       lista.appendChild(construirCardTarefa(tarefa));
     });
   }
@@ -342,9 +474,48 @@
     badge.className = 'badge badge-' + tarefa.prioridade;
     badge.textContent = tarefa.prioridade;
 
+    var btnExcluir = document.createElement('button');
+    btnExcluir.className   = 'btn-excluir';
+    btnExcluir.title       = 'Excluir tarefa';
+    btnExcluir.textContent = '✕';
+    btnExcluir.addEventListener('click', function() {
+      if (confirm('Excluir a tarefa "' + tarefa.tarefa + '"?')) {
+        excluirTarefa(tarefa.id, card);
+      }
+    });
+
     cabecalho.appendChild(titulo);
     cabecalho.appendChild(badge);
+    cabecalho.appendChild(btnExcluir);
     card.appendChild(cabecalho);
+
+    // Responsável (se houver)
+    if (tarefa.responsavel) {
+      var respEl = document.createElement('p');
+      respEl.className   = 'responsavel';
+      respEl.textContent = '👤 ' + tarefa.responsavel;
+      card.appendChild(respEl);
+    }
+
+    // Data de vencimento (se houver)
+    if (tarefa.vencimento) {
+      var dataEl = document.createElement('p');
+      dataEl.className = 'data-vencimento';
+      var hoje     = new Date().toISOString().slice(0, 10);
+      var venc     = tarefa.vencimento.slice(0, 10);
+      var partes   = venc.split('-');
+      var dataFormatada = partes[2] + '/' + partes[1] + '/' + partes[0];
+      if (venc < hoje) {
+        dataEl.classList.add('vencida');
+        dataEl.textContent = '⚠ Venceu em ' + dataFormatada;
+      } else if (venc === hoje) {
+        dataEl.classList.add('hoje');
+        dataEl.textContent = '⏰ Vence hoje';
+      } else {
+        dataEl.textContent = '📅 Vence em ' + dataFormatada;
+      }
+      card.appendChild(dataEl);
+    }
 
     // Descrição (se houver)
     if (tarefa.descricao) {
@@ -360,7 +531,19 @@
       secao.className = 'secao-subtarefas';
 
       var h4 = document.createElement('h4');
-      h4.textContent = 'Subtarefas';
+
+      var spanLabel = document.createElement('span');
+      spanLabel.textContent = 'Subtarefas';
+
+      var spanContador = document.createElement('span');
+      spanContador.className = 'contador-progresso';
+      spanContador.id = 'contador-' + tarefa.id;
+      var marcadas = tarefa.concluido ? subtarefas.length : 0;
+      spanContador.textContent = marcadas + '/' + subtarefas.length;
+      if (marcadas === subtarefas.length) spanContador.classList.add('completo');
+
+      h4.appendChild(spanLabel);
+      h4.appendChild(spanContador);
       secao.appendChild(h4);
 
       subtarefas.forEach(function(sub, idx) {
@@ -372,7 +555,7 @@
         cb.id      = 'cb-' + tarefa.id + '-' + idx;
         cb.checked = tarefa.concluido;
         cb.addEventListener('change', function() {
-          verificarConclusao(card, secao);
+          verificarConclusao(card, secao, tarefa.id);
         });
 
         var lbl = document.createElement('label');
@@ -397,9 +580,17 @@
 
   // ── Verificar se a tarefa deve ser marcada como concluída ─────
   // A tarefa SÓ fica concluída quando TODAS as subtarefas estão marcadas.
-  function verificarConclusao(card, secao) {
-    var checkboxes = secao.querySelectorAll('input[type="checkbox"]');
-    var todasMarcadas = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+  function verificarConclusao(card, secao, id) {
+    var checkboxes = Array.from(secao.querySelectorAll('input[type="checkbox"]'));
+    var marcadas      = checkboxes.filter(function(cb) { return cb.checked; }).length;
+    var todasMarcadas = marcadas === checkboxes.length;
+
+    // Atualiza contador
+    var contador = document.getElementById('contador-' + id);
+    if (contador) {
+      contador.textContent = marcadas + '/' + checkboxes.length;
+      contador.classList.toggle('completo', todasMarcadas);
+    }
 
     if (todasMarcadas) {
       card.classList.add('concluida');
@@ -410,6 +601,42 @@
       card.classList.remove('concluida');
       var existente = card.querySelector('.badge-concluida');
       if (existente) existente.remove();
+    }
+
+    salvarConclusao(id, todasMarcadas);
+  }
+
+  // Remove a tarefa da planilha e do DOM
+  async function excluirTarefa(id, card) {
+    try {
+      var resposta = await fetch(SCRIPT_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body:    JSON.stringify({ acao: 'excluir', id: id })
+      });
+      var resultado = await resposta.json();
+      if (resultado.erro) throw new Error(resultado.erro);
+      card.remove();
+      var lista = document.getElementById('lista-tarefas');
+      if (!lista.querySelector('.card-tarefa')) {
+        lista.innerHTML = '<p style="text-align:center;color:var(--mudo)">Nenhuma tarefa ainda. Crie a primeira acima!</p>';
+      }
+    } catch (erro) {
+      alert('Erro ao excluir. Tente novamente.');
+      console.error(erro);
+    }
+  }
+
+  // Envia atualização de conclusão para a planilha
+  async function salvarConclusao(id, concluido) {
+    try {
+      await fetch(SCRIPT_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body:    JSON.stringify({ acao: 'concluir', id: id, concluido: concluido })
+      });
+    } catch (erro) {
+      console.error('Erro ao salvar conclusão:', erro);
     }
   }
 
